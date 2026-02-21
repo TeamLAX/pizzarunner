@@ -406,6 +406,10 @@
   <!-- ③ View-only delivery details -->
   <div class="info-panel" id="infoPanel">
     <div class="info-row">
+      <span class="info-lbl">Runner</span>
+      <span class="info-val" id="viewRunner">—</span>
+    </div>
+    <div class="info-row">
       <span class="info-lbl">Delivery Time</span>
       <span class="info-val" id="viewTime">—</span>
     </div>
@@ -551,6 +555,9 @@ document.getElementById('recipientSelect').addEventListener('change', function (
 
   selectedRow = rows[parseInt(idx)];
 
+  // Runner name
+  document.getElementById('viewRunner').textContent = runnerInput.value.trim() || '—';
+
   // Delivery time — strip any date portion, show 24hr time only
   const rawTime = selectedRow[COL.time] || '';
   let displayTime = '—';
@@ -681,7 +688,18 @@ async function acceptMission() {
   try {
     const res  = await fetch(APPS_SCRIPT_URL, {
       method:  'POST',
-      body:    JSON.stringify({ markAccepted: true, row: selectedRow._row }),
+      body:    JSON.stringify({
+        markAccepted:    true,
+        row:             selectedRow._row,
+        runnerName:      runnerInput.value.trim() || 'Runner',
+        runnerEmail:     emailInput.value.trim(),
+        orderFullName:   selectedRow[COL.fullName]     || '',
+        orderAddress:    selectedRow[COL.address]      || '',
+        orderPhone:      selectedRow[COL.phone]        || '',
+        orderEmail:      selectedRow[COL.email]        || '',
+        orderTime:       selectedRow[COL.time]         || '',
+        orderInstructions: selectedRow[COL.instructions] || '',
+      }),
     });
     const data = await res.json();
 
