@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2V Pizza Runner</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red:    #e8190a;
+    --orange: #ff6b1a;
+    --dark:   #0d0d0d;
+    --card:   #161616;
+    --border: #2a2a2a;
+    --text:   #f0ece4;
+    --muted:  #777;
+    --accent: #ffcc00;
+    --green:  #22c55e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 16px 80px;
+    background-image:
+      radial-gradient(ellipse at 15% 0%,  rgba(232,25,10,0.13)  0%, transparent 55%),
+      radial-gradient(ellipse at 85% 100%, rgba(255,107,26,0.09) 0%, transparent 55%);
+  }
+
+  /* ── Header ─────────────────────────────────────────────── */
+  .header {
+    text-align: center;
+    margin-bottom: 36px;
+    animation: fadeDown 0.55s ease both;
+  }
+
+  .pizza-spin {
+    font-size: 54px;
+    display: block;
+    margin-bottom: 6px;
+    filter: drop-shadow(0 0 18px rgba(255,107,26,0.55));
+    animation: spin 22s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  h1 {
+    font-family: 'Black Ops One', cursive;
+    font-size: clamp(1.9rem, 6vw, 3.2rem);
+    letter-spacing: 2px;
+    background: linear-gradient(130deg, var(--red) 0%, var(--orange) 55%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .tagline {
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+
+  /* ── Card ────────────────────────────────────────────────── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 30px 28px 28px;
+    width: 100%;
+    max-width: 540px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.65s ease 0.1s both;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--red), var(--orange), var(--accent));
+  }
+
+  /* ── Fields ──────────────────────────────────────────────── */
+  .field { margin-bottom: 22px; }
+
+  label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+
+  input[type="text"], select {
+    width: 100%;
+    background: #0e0e0e;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 13px 15px;
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  input[type="text"]:focus, select:focus {
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(255,107,26,0.10);
+  }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 38px;
+    cursor: pointer;
+  }
+  select option { background: #111; }
+
+  /* ── Info panel ──────────────────────────────────────────── */
+  .info-panel {
+    display: none;
+    background: #0a0a0a;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 22px;
+    flex-direction: column;
+    animation: fadeUp 0.3s ease both;
+  }
+  .info-panel.visible { display: flex; }
+
+  .info-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 11px 0;
+    border-bottom: 1px solid #1e1e1e;
+  }
+  .info-row:last-child  { border-bottom: none; padding-bottom: 0; }
+  .info-row:first-child { padding-top: 0; }
+
+  .info-lbl {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .info-val {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .info-val a { color: var(--orange); text-decoration: none; }
+  .info-val a:hover { text-decoration: underline; }
+
+  /* ── Instructions ────────────────────────────────────────── */
+  .instructions-box {
+    display: none;
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-left: 3px solid var(--orange);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 22px;
+    font-size: 15px;
+    line-height: 1.55;
+    color: #ccc;
+    animation: fadeUp 0.3s ease both;
+  }
+  .instructions-box.visible { display: block; }
+  .inst-lbl {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 26px 0; }
+
+  /* ── Slider ──────────────────────────────────────────────── */
+  .slide-wrap label { margin-bottom: 10px; }
+
+  .slide-track {
+    position: relative;
+    background: #0e0e0e;
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    height: 58px;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  .slide-track.locked { pointer-events: none; opacity: 0.38; }
+
+  .slide-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: linear-gradient(90deg, rgba(232,25,10,0.18), rgba(255,107,26,0.10));
+    border-radius: 50px;
+    pointer-events: none;
+  }
+
+  .slide-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    pointer-events: none;
+    transition: opacity 0.15s;
+  }
+
+  .slide-handle {
+    position: absolute;
+    left: 4px; top: 4px;
+    width: 50px; height: 50px;
+    background: linear-gradient(135deg, var(--red), var(--orange));
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    box-shadow: 0 3px 14px rgba(232,25,10,0.38);
+    font-size: 22px;
+    z-index: 2;
+  }
+  .slide-handle:active { cursor: grabbing; }
+
+  .slide-notice {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 8px;
+    text-align: center;
+    display: none;
+  }
+
+  /* ── Success ─────────────────────────────────────────────── */
+  .success {
+    display: none;
+    text-align: center;
+    padding: 16px 0 4px;
+    animation: popIn 0.45s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  .success.visible { display: block; }
+  .success-icon { font-size: 52px; display: block; margin-bottom: 10px; }
+
+  .success h2 {
+    font-family: 'Black Ops One', cursive;
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, var(--green), #86efac);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+  }
+
+  .success p { color: var(--muted); font-size: 15px; line-height: 1.5; }
+
+  .saving-row {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .dot-spin {
+    width: 14px; height: 14px;
+    border: 2px solid #333;
+    border-top-color: var(--orange);
+    border-radius: 50%;
+    animation: spin 0.65s linear infinite;
+    flex-shrink: 0;
+  }
+
+  /* ── Setup banner ────────────────────────────────────────── */
+  .setup-banner {
+    background: rgba(255,204,0,0.07);
+    border: 1px solid rgba(255,204,0,0.22);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 26px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #fde68a;
+    display: none;
+  }
+  .setup-banner.visible { display: block; }
+  .setup-banner strong {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    color: var(--accent);
+  }
+  .setup-banner code {
+    background: rgba(255,255,255,0.08);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 12px;
+  }
+
+  /* ── Error notice ────────────────────────────────────────── */
+  .err-notice {
+    background: rgba(232,25,10,0.10);
+    color: #f87171;
+    border: 1px solid rgba(232,25,10,0.25);
+    border-radius: 7px;
+    padding: 10px 13px;
+    font-size: 12px;
+    margin-top: 8px;
+    display: none;
+  }
+
+  /* ── Animations ──────────────────────────────────────────── */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.85); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="pizza-spin">🍕</span>
+  <h1>B2V Pizza Runner</h1>
+  <p class="tagline">Mission Dispatch System</p>
+</div>
+
+<div class="card">
+
+  <!-- Setup warning (shown until URL is configured) -->
+  <div class="setup-banner" id="setupBanner">
+    <strong>⚙ One-Time Setup Required</strong>
+    Paste your Google Apps Script Web App URL into the
+    <code>APPS_SCRIPT_URL</code> constant at the top of this file's
+    <code>&lt;script&gt;</code> section.
+  </div>
+
+  <!-- ① Runner name (persists across sessions) -->
+  <div class="field">
+    <label>Your Runner Name</label>
+    <input type="text" id="runnerName" placeholder="Enter your name…" autocomplete="name">
+  </div>
+
+  <!-- ② Recipient dropdown (loaded from sheet) -->
+  <div class="field">
+    <label>Select Recipient</label>
+    <select id="recipientSelect">
+      <option value="">— Loading deliveries… —</option>
+    </select>
+    <div class="err-notice" id="loadError"></div>
+  </div>
+
+  <!-- ③ View-only delivery details -->
+  <div class="info-panel" id="infoPanel">
+    <div class="info-row">
+      <span class="info-lbl">Delivery Time</span>
+      <span class="info-val" id="viewTime">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-lbl">Address</span>
+      <span class="info-val" id="viewAddress">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-lbl">Phone</span>
+      <span class="info-val" id="viewPhone">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-lbl">Email</span>
+      <span class="info-val" id="viewEmail">—</span>
+    </div>
+  </div>
+
+  <!-- ④ Special instructions (only shown when present) -->
+  <div class="instructions-box" id="instrBox">
+    <span class="inst-lbl">📋 Special Instructions</span>
+    <span id="viewInstructions"></span>
+  </div>
+
+  <hr>
+
+  <!-- ⑤ Slide to accept -->
+  <div class="slide-wrap" id="slideWrap">
+    <label>Accept Your Mission</label>
+    <div class="slide-track locked" id="slideTrack">
+      <div class="slide-fill"  id="slideFill"></div>
+      <div class="slide-label" id="slideLabel">Slide to Accept →</div>
+      <div class="slide-handle" id="slideHandle">🍕</div>
+    </div>
+    <div class="slide-notice" id="slideNotice">Select a recipient above to unlock</div>
+  </div>
+
+  <!-- ⑥ Success state -->
+  <div class="success" id="successState">
+    <span class="success-icon">✅</span>
+    <h2>Mission Accepted!</h2>
+    <p id="successMsg"></p>
+    <div class="saving-row" id="savingRow">
+      <div class="dot-spin" id="savingSpinner"></div>
+      <span id="savingText">Marking row in sheet…</span>
+    </div>
+  </div>
+
+</div><!-- /card -->
+
+<script>
+// ================================================================
+//  CONFIGURATION — paste your Apps Script Web App URL below
+// ================================================================
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzaFOKho1c9ZigL22FNPMTJAhGl5YNYaj3lQbTlj4Mb0Cc9l-w09GWhB9sdr0Hu9V-p/exec';
+
+// ================================================================
+//  COLUMN HEADERS — must match your Google Sheet exactly
+// ================================================================
+const COL = {
+  fullName:     'Full Name',
+  address:      'Address',
+  phone:        'Phone',
+  email:        'Email',
+  time:         'Delivery Time',
+  instructions: 'Questions / Instructions',
+};
+
+// ── State ────────────────────────────────────────────────────────
+let rows        = [];
+let selectedRow = null;
+
+// ── Persist runner name across page loads ────────────────────────
+const runnerInput = document.getElementById('runnerName');
+runnerInput.value = localStorage.getItem('b2v_runner') || '';
+runnerInput.addEventListener('input', () =>
+  localStorage.setItem('b2v_runner', runnerInput.value));
+
+// ── Init ─────────────────────────────────────────────────────────
+(function init() {
+  const missing = !APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE';
+  if (missing) {
+    document.getElementById('setupBanner').classList.add('visible');
+    document.getElementById('recipientSelect').innerHTML =
+      '<option value="">— Apps Script URL not configured —</option>';
+    document.getElementById('slideNotice').style.display = 'block';
+  } else {
+    loadRows();
+  }
+})();
+
+// ── Load un-accepted rows via doGet ──────────────────────────────
+async function loadRows() {
+  const sel = document.getElementById('recipientSelect');
+  sel.innerHTML = '<option value="">— Loading… —</option>';
+
+  try {
+    const res  = await fetch(APPS_SCRIPT_URL + '?t=' + Date.now());
+    const data = await res.json();
+
+    if (data.status !== 'success') throw new Error(data.message || 'Script returned an error');
+
+    rows = data.rows;
+
+    if (rows.length === 0) {
+      sel.innerHTML = '<option value="">— No pending deliveries 🎉 —</option>';
+      return;
+    }
+
+    sel.innerHTML = '<option value="">— Select a recipient —</option>';
+    rows.forEach((r, i) => {
+      const opt       = document.createElement('option');
+      opt.value       = i;
+      opt.textContent = r[COL.fullName] || `Row ${r._row}`;
+      sel.appendChild(opt);
+    });
+
+  } catch (err) {
+    sel.innerHTML = '<option value="">— Failed to load —</option>';
+    const errEl = document.getElementById('loadError');
+    errEl.textContent = 'Could not reach Apps Script. Verify the URL and deployment. ' + err.message;
+    errEl.style.display = 'block';
+  }
+}
+
+// ── Handle recipient selection ───────────────────────────────────
+document.getElementById('recipientSelect').addEventListener('change', function () {
+  const idx      = this.value;
+  const panel    = document.getElementById('infoPanel');
+  const instrBox = document.getElementById('instrBox');
+
+  if (idx === '') {
+    panel.classList.remove('visible');
+    instrBox.classList.remove('visible');
+    lockSlider();
+    return;
+  }
+
+  selectedRow = rows[parseInt(idx)];
+
+  // Delivery time
+  document.getElementById('viewTime').textContent = selectedRow[COL.time] || '—';
+
+  // Address — tappable Google Maps link
+  const addr = selectedRow[COL.address] || '';
+  document.getElementById('viewAddress').innerHTML = addr
+    ? `<a href="https://maps.google.com/?q=${encodeURIComponent(addr)}" target="_blank">${addr} ↗</a>`
+    : '—';
+
+  // Phone — tel link
+  const phone = selectedRow[COL.phone] || '';
+  document.getElementById('viewPhone').innerHTML = phone
+    ? `<a href="tel:${phone.replace(/\D/g, '')}">${phone}</a>`
+    : '—';
+
+  // Email — mailto link
+  const email = selectedRow[COL.email] || '';
+  document.getElementById('viewEmail').innerHTML = email
+    ? `<a href="mailto:${email}">${email}</a>`
+    : '—';
+
+  panel.classList.add('visible');
+
+  // Instructions — only show if non-empty
+  const instr = (selectedRow[COL.instructions] || '').trim();
+  if (instr) {
+    document.getElementById('viewInstructions').textContent = instr;
+    instrBox.classList.add('visible');
+  } else {
+    instrBox.classList.remove('visible');
+  }
+
+  unlockSlider();
+});
+
+// ── Slider ───────────────────────────────────────────────────────
+const track  = document.getElementById('slideTrack');
+const fill   = document.getElementById('slideFill');
+const lbl    = document.getElementById('slideLabel');
+const handle = document.getElementById('slideHandle');
+const notice = document.getElementById('slideNotice');
+
+let dragging = false, startX = 0, baseLeft = 4;
+const maxLeft = () => track.offsetWidth - 54;
+
+function lockSlider() {
+  track.classList.add('locked');
+  notice.style.display = 'block';
+  handle.style.left = '4px';
+  fill.style.width  = '4px';
+  lbl.style.opacity = '1';
+}
+
+function unlockSlider() {
+  track.classList.remove('locked');
+  notice.style.display = 'none';
+  handle.style.left = '4px';
+  fill.style.width  = '4px';
+  lbl.style.opacity = '1';
+}
+
+handle.addEventListener('mousedown',  onStart);
+handle.addEventListener('touchstart', onStart, { passive: false });
+document.addEventListener('mousemove',  onMove);
+document.addEventListener('touchmove',  onMove, { passive: false });
+document.addEventListener('mouseup',    () => { dragging = false; });
+document.addEventListener('touchend',   () => { dragging = false; });
+
+function onStart(e) {
+  if (track.classList.contains('locked')) return;
+  dragging = true;
+  startX   = e.touches ? e.touches[0].clientX : e.clientX;
+  baseLeft = parseInt(handle.style.left) || 4;
+  e.preventDefault();
+}
+
+function onMove(e) {
+  if (!dragging) return;
+  const cx  = e.touches ? e.touches[0].clientX : e.clientX;
+  const ml  = maxLeft();
+  const pos = Math.max(4, Math.min(baseLeft + (cx - startX), ml));
+  handle.style.left = pos + 'px';
+  fill.style.width  = pos + 'px';
+  lbl.style.opacity = Math.max(0, 1 - ((pos - 4) / (ml - 4)) * 1.7);
+  if (pos >= ml - 2) { dragging = false; acceptMission(); }
+}
+
+// ── Accept mission ───────────────────────────────────────────────
+async function acceptMission() {
+  handle.style.left = maxLeft() + 'px';
+  lbl.style.opacity = '0';
+  track.classList.add('locked');
+
+  await new Promise(r => setTimeout(r, 260));
+
+  // Swap slider → success card
+  document.getElementById('slideWrap').style.display = 'none';
+  document.getElementById('successState').classList.add('visible');
+
+  const runner = runnerInput.value.trim() || 'Runner';
+  const name   = selectedRow ? (selectedRow[COL.fullName] || 'the recipient') : 'the recipient';
+  document.getElementById('successMsg').textContent =
+    `${runner}, you're on your way to ${name}. 🍕`;
+
+  const savingRow = document.getElementById('savingRow');
+  savingRow.style.display = 'flex';
+
+  // Bail out early if not configured
+  if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    savingRow.style.display = 'none';
+    return;
+  }
+
+  // POST markAccepted to doPost — matches the updated Apps Script
+  try {
+    const res  = await fetch(APPS_SCRIPT_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ markAccepted: true, row: selectedRow._row }),
+    });
+    const data = await res.json();
+
+    document.getElementById('savingSpinner').style.display = 'none';
+    document.getElementById('savingText').textContent = (data.status === 'success')
+      ? "✅  Marked — won't appear again."
+      : `⚠  Could not mark row: ${data.message}`;
+
+  } catch (err) {
+    document.getElementById('savingSpinner').style.display = 'none';
+    document.getElementById('savingText').textContent = `⚠  Network error: ${err.message}`;
+  }
+}
+</script>
+</body>
+</html>
