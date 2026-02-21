@@ -388,9 +388,15 @@
     <input type="text" id="runnerName" placeholder="Enter your name…" autocomplete="name">
   </div>
 
-  <!-- ② Recipient dropdown (loaded from sheet) -->
+  <!-- ② Runner email (persists across sessions) -->
   <div class="field">
-    <label>Select Recipient</label>
+    <label>Your Email</label>
+    <input type="text" id="runnerEmail" placeholder="Enter your email…" autocomplete="email">
+  </div>
+
+  <!-- ③ Recipient dropdown (loaded from sheet) -->
+  <div class="field">
+    <label>Select Waiting Order</label>
     <select id="recipientSelect">
       <option value="">— Loading deliveries… —</option>
     </select>
@@ -477,6 +483,12 @@ runnerInput.value = localStorage.getItem('b2v_runner') || '';
 runnerInput.addEventListener('input', () =>
   localStorage.setItem('b2v_runner', runnerInput.value));
 
+// ── Persist runner email across page loads ───────────────────────
+const emailInput = document.getElementById('runnerEmail');
+emailInput.value = localStorage.getItem('b2v_runner_email') || '';
+emailInput.addEventListener('input', () =>
+  localStorage.setItem('b2v_runner_email', emailInput.value));
+
 // ── Init ─────────────────────────────────────────────────────────
 (function init() {
   const missing = !APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE';
@@ -508,7 +520,7 @@ async function loadRows() {
       return;
     }
 
-    sel.innerHTML = '<option value="">— Select a recipient —</option>';
+    sel.innerHTML = '<option value="">— Select a waiting order —</option>';
     rows.forEach((r, i) => {
       const opt       = document.createElement('option');
       opt.value       = i;
@@ -539,8 +551,21 @@ document.getElementById('recipientSelect').addEventListener('change', function (
 
   selectedRow = rows[parseInt(idx)];
 
-  // Delivery time
-  document.getElementById('viewTime').textContent = selectedRow[COL.time] || '—';
+  // Delivery time — strip any date portion, show 24hr time only
+  const rawTime = selectedRow[COL.time] || '';
+  let displayTime = '—';
+  if (rawTime) {
+    // Try to parse and reformat as HH:MM
+    const d = new Date('1970-01-01 ' + rawTime.replace(/.*?(\d{1,2}:\d{2}(:\d{2})?(\s*[AP]M)?).*$/i, '$1'));
+    if (!isNaN(d)) {
+      displayTime = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+    } else {
+      // Fallback: grab first HH:MM pattern found in the string
+      const match = rawTime.match(/\d{1,2}:\d{2}/);
+      displayTime = match ? match[0] : rawTime;
+    }
+  }
+  document.getElementById('viewTime').textContent = displayTime;
 
   // Address — tappable Google Maps link
   const addr = selectedRow[COL.address] || '';
