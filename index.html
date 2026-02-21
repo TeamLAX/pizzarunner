@@ -95,12 +95,12 @@
   .status-dot.red {
     background: var(--red);
     box-shadow: 0 0 8px rgba(232,25,10,0.5);
-    animation: pulse-red 1s ease-in-out infinite;
+    animation: blink-red 500ms step-start infinite;
   }
 
-  @keyframes pulse-red {
-    0%, 100% { box-shadow: 0 0 6px rgba(232,25,10,0.4); opacity: 1; }
-    50%       { box-shadow: 0 0 16px rgba(232,25,10,0.9); opacity: 0.6; }
+  @keyframes blink-red {
+    0%, 100% { background: #e8190a; box-shadow: 0 0 10px rgba(232,25,10,0.8); }
+    50%       { background: #000; box-shadow: none; }
   }
 
   .status-text {
