@@ -548,43 +548,12 @@ emailInput.addEventListener('input', () =>
       '<option value="">— Apps Script URL not configured —</option>';
     document.getElementById('slideNotice').style.display = 'block';
   } else {
-    loadRows();
+    document.getElementById('recipientSelect').innerHTML =
+      '<option value="">— Loading… —</option>';
+    poll();
+    setInterval(poll, 10000);
   }
 })();
-
-// ── Load un-accepted rows via doGet ──────────────────────────────
-async function loadRows() {
-  const sel = document.getElementById('recipientSelect');
-  sel.innerHTML = '<option value="">— Loading… —</option>';
-
-  try {
-    const res  = await fetch(APPS_SCRIPT_URL + '?t=' + Date.now());
-    const data = await res.json();
-
-    if (data.status !== 'success') throw new Error(data.message || 'Script returned an error');
-
-    rows = data.rows;
-
-    if (rows.length === 0) {
-      sel.innerHTML = '<option value="">— No pending deliveries 🎉 —</option>';
-      return;
-    }
-
-    sel.innerHTML = '<option value="">— Select a waiting order —</option>';
-    rows.forEach((r, i) => {
-      const opt       = document.createElement('option');
-      opt.value       = i;
-      opt.textContent = r[COL.fullName] || `Row ${r._row}`;
-      sel.appendChild(opt);
-    });
-
-  } catch (err) {
-    sel.innerHTML = '<option value="">— Failed to load —</option>';
-    const errEl = document.getElementById('loadError');
-    errEl.textContent = 'Could not reach Apps Script. Verify the URL and deployment. ' + err.message;
-    errEl.style.display = 'block';
-  }
-}
 
 // ── Handle recipient selection ───────────────────────────────────
 document.getElementById('recipientSelect').addEventListener('change', function () {
@@ -704,33 +673,59 @@ function onMove(e) {
   if (pos >= ml - 2) { dragging = false; acceptMission(); }
 }
 
-// ── Order status indicator (polls every 10 seconds) ──────────────
-function updateStatusIndicator(rowCount) {
-  const dot  = document.getElementById('statusDot');
-  const text = document.getElementById('statusText');
-  if (rowCount > 0) {
-    dot.className  = 'status-dot red';
-    text.textContent = `${rowCount} Outstanding Order${rowCount > 1 ? 's' : ''}`;
-  } else {
-    dot.className  = 'status-dot green';
-    text.textContent = 'All Good';
-  }
-}
-
-async function pollStatus() {
+// ── Combined poll: refresh list + status indicator every 10s ─────
+async function poll() {
   if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return;
   try {
     const res  = await fetch(APPS_SCRIPT_URL + '?t=' + Date.now());
     const data = await res.json();
-    if (data.status === 'success') updateStatusIndicator(data.rows.length);
+    if (data.status !== 'success') return;
+
+    // Update status indicator
+    updateStatusIndicator(data.rows.length);
+
+    // Refresh dropdown if no order is currently selected
+    const sel = document.getElementById('recipientSelect');
+    if (!selectedRow) {
+      const prevValue = sel.value;
+      rows = data.rows;
+
+      if (rows.length === 0) {
+        sel.innerHTML = '<option value="">— No pending deliveries 🎉 —</option>';
+        return;
+      }
+
+      sel.innerHTML = '<option value="">— Select a waiting order —</option>';
+      rows.forEach((r, i) => {
+        const opt       = document.createElement('option');
+        opt.value       = i;
+        opt.textContent = r[COL.fullName] || `Row ${r._row}`;
+        sel.appendChild(opt);
+      });
+
+      // Restore previous selection if it still exists
+      if (prevValue !== '' && sel.querySelector(`option[value="${prevValue}"]`)) {
+        sel.value = prevValue;
+      }
+    }
   } catch (err) {
-    // silently fail — don't disrupt the form
+    // silently fail
   }
 }
 
-// Start polling immediately, then every 10 seconds
-pollStatus();
-setInterval(pollStatus, 10000);
+function updateStatusIndicator(rowCount) {
+  const dot  = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  if (rowCount > 0) {
+    dot.className    = 'status-dot red';
+    text.textContent = `${rowCount} Outstanding Order${rowCount > 1 ? 's' : ''}`;
+  } else {
+    dot.className    = 'status-dot green';
+    text.textContent = 'All Good';
+  }
+}
+
+// Start immediately then every 10 seconds — handled by init()
 
 async function acceptMission() {
   handle.style.left = maxLeft() + 'px';
