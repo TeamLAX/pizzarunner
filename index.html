@@ -79,8 +79,8 @@
   }
 
   .status-dot {
-    width: 14px;
-    height: 14px;
+    width: 17px;
+    height: 17px;
     border-radius: 50%;
     background: #333;
     flex-shrink: 0;
@@ -673,6 +673,23 @@ function onMove(e) {
   if (pos >= ml - 2) { dragging = false; acceptMission(); }
 }
 
+// ── Time helpers ─────────────────────────────────────────────────
+function parseTime(raw) {
+  if (!raw) return Infinity;
+  const d = new Date('1970-01-01 ' + raw.replace(/.*?(\d{1,2}:\d{2}(:\d{2})?(\s*[AP]M)?).*/i, '$1'));
+  if (!isNaN(d)) return d.getTime();
+  const m = raw.match(/(\d{1,2}):(\d{2})/);
+  return m ? parseInt(m[1]) * 60 + parseInt(m[2]) : Infinity;
+}
+
+function formatTime24(raw) {
+  if (!raw) return '';
+  const d = new Date('1970-01-01 ' + raw.replace(/.*?(\d{1,2}:\d{2}(:\d{2})?(\s*[AP]M)?).*/i, '$1'));
+  if (!isNaN(d)) return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const m = raw.match(/\d{1,2}:\d{2}/);
+  return m ? m[0] : '';
+}
+
 // ── Combined poll: refresh list + status indicator every 10s ─────
 async function poll() {
   if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return;
@@ -688,7 +705,13 @@ async function poll() {
     const sel = document.getElementById('recipientSelect');
     if (!selectedRow) {
       const prevValue = sel.value;
-      rows = data.rows;
+
+      // Sort by delivery time ascending
+      rows = data.rows.sort((a, b) => {
+        const timeA = parseTime(a[COL.time]);
+        const timeB = parseTime(b[COL.time]);
+        return timeA - timeB;
+      });
 
       if (rows.length === 0) {
         sel.innerHTML = '<option value="">— No pending deliveries 🎉 —</option>';
@@ -697,9 +720,11 @@ async function poll() {
 
       sel.innerHTML = '<option value="">— Select a waiting order —</option>';
       rows.forEach((r, i) => {
-        const opt       = document.createElement('option');
-        opt.value       = i;
-        opt.textContent = r[COL.fullName] || `Row ${r._row}`;
+        const opt      = document.createElement('option');
+        opt.value      = i;
+        const time     = formatTime24(r[COL.time]);
+        const name     = r[COL.fullName] || `Row ${r._row}`;
+        opt.textContent = time ? `${time} — ${name}` : name;
         sel.appendChild(opt);
       });
 
