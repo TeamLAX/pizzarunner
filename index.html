@@ -873,8 +873,10 @@ async function acceptMission() {
 
   // POST markAccepted to doPost — matches the updated Apps Script
   try {
-    const res  = await fetch(APPS_SCRIPT_URL, {
+    await fetch(APPS_SCRIPT_URL, {
       method:  'POST',
+      mode:    'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
       body:    JSON.stringify({
         markAccepted:    true,
         row:             selectedRow._row,
@@ -888,7 +890,8 @@ async function acceptMission() {
         orderInstructions: selectedRow[COL.instructions] || '',
       }),
     });
-    const data = await res.json();
+    // no-cors returns opaque response — assume success if no exception thrown
+    const data = { status: 'success' };
 
     document.getElementById('savingSpinner').style.display = 'none';
     document.getElementById('savingText').textContent = (data.status === 'success')
