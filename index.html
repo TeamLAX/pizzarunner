@@ -873,24 +873,43 @@ async function acceptMission() {
 
   // POST markAccepted to doPost — matches the updated Apps Script
   try {
-    await fetch(APPS_SCRIPT_URL, {
-      method:  'POST',
-      mode:    'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body:    JSON.stringify({
-        markAccepted:    true,
-        row:             selectedRow._row,
-        runnerName:      runnerInput.value.trim() || 'Runner',
-        runnerEmail:     emailInput.value.trim(),
-        orderFullName:   selectedRow[COL.fullName]     || '',
-        orderAddress:    selectedRow[COL.address]      || '',
-        orderPhone:      selectedRow[COL.phone]        || '',
-        orderEmail:      selectedRow[COL.email]        || '',
-        orderTime:       selectedRow[COL.time]         || '',
-        orderInstructions: selectedRow[COL.instructions] || '',
-      }),
+    // Submit via hidden iframe — reliable cross-origin POST to Apps Script
+    const acceptPayload = {
+      markAccepted:      'true',
+      row:               String(selectedRow._row),
+      runnerName:        runnerInput.value.trim() || 'Runner',
+      runnerEmail:       emailInput.value.trim(),
+      orderFullName:     selectedRow[COL.fullName]     || '',
+      orderAddress:      selectedRow[COL.address]      || '',
+      orderPhone:        selectedRow[COL.phone]        || '',
+      orderEmail:        selectedRow[COL.email]        || '',
+      orderTime:         selectedRow[COL.time]         || '',
+      orderInstructions: selectedRow[COL.instructions] || '',
+    };
+
+    const rIframe = document.createElement('iframe');
+    rIframe.name  = 'acceptTarget';
+    rIframe.style.display = 'none';
+    document.body.appendChild(rIframe);
+
+    const rForm  = document.createElement('form');
+    rForm.method = 'POST';
+    rForm.action = APPS_SCRIPT_URL;
+    rForm.target = 'acceptTarget';
+    rForm.style.display = 'none';
+
+    Object.entries(acceptPayload).forEach(([k, v]) => {
+      const inp = document.createElement('input');
+      inp.type  = 'hidden';
+      inp.name  = k;
+      inp.value = v;
+      rForm.appendChild(inp);
     });
-    // no-cors returns opaque response — assume success if no exception thrown
+
+    document.body.appendChild(rForm);
+    rForm.submit();
+
+    // Assume success — Apps Script processes it server-side
     const data = { status: 'success' };
 
     document.getElementById('savingSpinner').style.display = 'none';
